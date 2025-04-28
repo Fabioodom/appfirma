@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "629568376278",
+    "project_id": "appfirmarpdf",
+    "storage_bucket": "appfirmarpdf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:629568376278:android:1dec51754568ba0ef46877",
+        "android_client_info": {
+          "package_name": "com.example.appfima"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDBO3Tkktg6H3P_LsC0gIIiUSCnNsXjryU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:629568376278:android:9d68560753171faff46877",
+        "android_client_info": {
+          "package_name": "com.example.appfirmarpdf"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDBO3Tkktg6H3P_LsC0gIIiUSCnNsXjryU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
