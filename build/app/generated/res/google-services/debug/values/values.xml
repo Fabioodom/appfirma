@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gcm_defaultSenderId" translatable="false">629568376278</string>
+    <string name="google_api_key" translatable="false">AIzaSyDBO3Tkktg6H3P_LsC0gIIiUSCnNsXjryU</string>
+    <string name="google_app_id" translatable="false">1:629568376278:android:1dec51754568ba0ef46877</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyDBO3Tkktg6H3P_LsC0gIIiUSCnNsXjryU</string>
+    <string name="google_storage_bucket" translatable="false">appfirmarpdf.firebasestorage.app</string>
+    <string name="project_id" translatable="false">appfirmarpdf</string>
+</resources>
