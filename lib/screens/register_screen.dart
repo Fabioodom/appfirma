@@ -22,29 +22,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _loading = true);
 
     try {
-      // 1) Crear usuario en Firebase Auth
       final cred = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
       final uid = cred.user!.uid;
 
-      // 2) Usar transacción para actualizar el código de referido
       final codeRef = _firestore.collection('referral_codes').doc(code.trim());
       await _firestore.runTransaction((txn) async {
         final snapshot = await txn.get(codeRef);
         if (!snapshot.exists) {
           throw FirebaseException(
-              plugin: 'cloud_firestore',
-              message: 'Código de referido inválido');
+              plugin: 'cloud_firestore', message: 'Código de referido inválido');
         }
         final data = snapshot.data()!;
         final int maxUses = (data['maxUses'] ?? 1) as int;
         final List usedBy = List.from(data['usedBy'] ?? []);
         if (usedBy.length >= maxUses) {
           throw FirebaseException(
-              plugin: 'cloud_firestore',
-              message: 'Código de referido agotado');
+              plugin: 'cloud_firestore', message: 'Código de referido agotado');
         }
         txn.update(codeRef, {
           'usedBy': FieldValue.arrayUnion([uid]),
@@ -52,14 +48,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
       });
 
-      // 3) Guardar datos del usuario en Firestore
       await _firestore.collection('users').doc(uid).set({
         'email': email.trim(),
         'referredBy': code.trim(),
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // 4) Navegar a Home
       if (mounted) Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -80,6 +74,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green.shade700,
@@ -111,101 +107,111 @@ class _RegisterScreenState extends State<RegisterScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Card(
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              elevation: 6,
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(
-                        'assets/images/logo.png',
-                        height: 80,
-                        fit: BoxFit.contain,
-                      ),
-                      const SizedBox(height: 16),
-                      Icon(
-                        Icons.card_membership,
-                        size: 64,
-                        color: Colors.green.shade800,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Crea tu cuenta usando un código de referido',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          height: 1.4,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      TextFormField(
-                        decoration: const InputDecoration(labelText: 'Email'),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (v) =>
-                            v != null && v.contains('@') ? null : 'Email inválido',
-                        onSaved: (v) => email = v ?? '',
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        decoration: const InputDecoration(labelText: 'Contraseña'),
-                        obscureText: true,
-                        validator: (v) =>
-                            v != null && v.length >= 6 ? null : 'Mínimo 6 caracteres',
-                        onSaved: (v) => password = v ?? '',
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        decoration: const InputDecoration(
-                            labelText: 'Código de referido'),
-                        validator: (v) => v != null && v.isNotEmpty
-                            ? null
-                            : 'Introduce el código de referido',
-                        onSaved: (v) => code = v ?? '',
-                      ),
-                      const SizedBox(height: 24),
-                      _loading
-                          ? const CircularProgressIndicator()
-                          : SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: _register,
-                                child: const Text(
-                                  'Registrarse',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green.shade700,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  elevation: 4,
-                                ),
-                              ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  elevation: 6,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/images/logo.png',
+                            height: screenHeight < 600 ? 60 : 80,
+                            fit: BoxFit.contain,
+                          ),
+                          const SizedBox(height: 16),
+                          Icon(
+                            Icons.card_membership,
+                            size: 64,
+                            color: Colors.green.shade800,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Crea tu cuenta usando un código de referido',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              height: 1.4,
+                              color: Colors.black87,
                             ),
-                      TextButton(
-                        onPressed: () =>
-                            Navigator.pushReplacementNamed(context, '/login'),
-                        child: const Text('¿Ya tienes cuenta? Inicia sesión'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.green.shade700,
-                        ),
+                          ),
+                          const SizedBox(height: 24),
+                          TextFormField(
+                            decoration:
+                                const InputDecoration(labelText: 'Email'),
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (v) => v != null && v.contains('@')
+                                ? null
+                                : 'Email inválido',
+                            onSaved: (v) => email = v ?? '',
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            decoration:
+                                const InputDecoration(labelText: 'Contraseña'),
+                            obscureText: true,
+                            validator: (v) =>
+                                v != null && v.length >= 6
+                                    ? null
+                                    : 'Mínimo 6 caracteres',
+                            onSaved: (v) => password = v ?? '',
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            decoration: const InputDecoration(
+                                labelText: 'Código de referido'),
+                            validator: (v) => v != null && v.isNotEmpty
+                                ? null
+                                : 'Introduce el código de referido',
+                            onSaved: (v) => code = v ?? '',
+                          ),
+                          const SizedBox(height: 24),
+                          _loading
+                              ? const CircularProgressIndicator()
+                              : SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: _register,
+                                    child: const Text(
+                                      'Registrarse',
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green.shade700,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      elevation: 4,
+                                    ),
+                                  ),
+                                ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: () => Navigator.pushReplacementNamed(
+                                context, '/login'),
+                            child: const Text('¿Ya tienes cuenta? Inicia sesión'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.green.shade700,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
