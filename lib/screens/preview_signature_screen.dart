@@ -10,6 +10,7 @@ import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../utils/pdf_saver.dart';
 
 class PreviewSignatureScreen extends StatefulWidget {
   final Uint8List pdfBytes;
@@ -78,17 +79,57 @@ class _PreviewSignatureScreenState extends State<PreviewSignatureScreen> {
     return bytes;
   }
 
-  Future<void> _saveToDevice() async {
+  Future<void> _saveToDevice({required String fileName}) async {
+  try {
     final signed = await _renderSignedPdf();
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/signed_page$_currentPage.pdf');
-    await file.writeAsBytes(signed);
+    // delegamos el guardado a nuestro helper
+    final result = await savePdf(signed, fileName);
+    if (!mounted) return;
+
+    final msg = kIsWeb
+      ? 'Descarga iniciada como: $result'
+      : 'Guardado en: $result';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
+  } catch (e, st) {
+    debugPrint('Error guardando PDF: $e\n$st');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Guardado en: ${file.path}')),
+        SnackBar(content: Text('Error al guardar: $e')),
       );
     }
   }
+}
+
+
+
+
+Future<String?> _askFileName(BuildContext ctx) async {
+  final controller = TextEditingController(text: 'documento');
+  return showDialog<String>(
+    context: ctx,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Nombre del archivo'),
+      content: TextField(
+        controller: controller,
+        decoration: const InputDecoration(hintText: 'Introduce un nombre'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(null),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
+  );
+}
+
+
 
   Future<void> _sharePdf() async {
     final signed = await _renderSignedPdf();
@@ -123,15 +164,15 @@ class _PreviewSignatureScreenState extends State<PreviewSignatureScreen> {
     }
   }
 
-  void _zoomIn() => _pdfViewerController.zoomLevel *= 1.2;
-  void _zoomOut() => _pdfViewerController.zoomLevel /= 1.2;
-  void _resetSignature() => setState(() {
-        _sigPos = const Offset(100, 100);
-        _sigWidth = 150;
-        _sigHeight = 75;
-        _sigOpacity = 0.9;
-        _sigRotation = 0.0;
-      });
+  //void _zoomIn() => _pdfViewerController.zoomLevel *= 1.2;
+  //void _zoomOut() => _pdfViewerController.zoomLevel /= 1.2;
+  //void _resetSignature() => setState(() {
+        //_sigPos = const Offset(100, 100);
+        //_sigWidth = 150;
+        //_sigHeight = 75;
+        //_sigOpacity = 0.9;
+        //_sigRotation = 0.0;
+      //});
 
   @override
   Widget build(BuildContext context) {
@@ -315,29 +356,7 @@ class _PreviewSignatureScreenState extends State<PreviewSignatureScreen> {
                         const SizedBox(height: 16),
 
                         // Acciones rápidas
-                        Card(
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              children: [
-                                Text('Acciones', style: theme.textTheme.titleMedium),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    IconButton(icon: Icon(Icons.zoom_in, color: green), tooltip: 'Zoom in', onPressed: _zoomIn),
-                                    IconButton(icon: Icon(Icons.zoom_out, color: green), tooltip: 'Zoom out', onPressed: _zoomOut),
-                                    IconButton(icon: Icon(Icons.refresh, color: green), tooltip: 'Reset firma', onPressed: _resetSignature),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
+                        
                         // Ajustes de firma
                         Card(
                           elevation: 4,
@@ -383,12 +402,19 @@ class _PreviewSignatureScreenState extends State<PreviewSignatureScreen> {
                               children: [
                                 Text('Exportar PDF', style: theme.textTheme.titleMedium),
                                 const SizedBox(height: 8),
-                                ElevatedButton.icon(
-                                  icon: const Icon(Icons.download),
-                                  label: const Text('Descargar'),
-                                  style: ElevatedButton.styleFrom(backgroundColor: green),
-                                  onPressed: _saveToDevice,
-                                ),
+                               ElevatedButton.icon(
+                              icon: const Icon(Icons.download),
+                              label: const Text('Descargar'),
+                              style: ElevatedButton.styleFrom(backgroundColor: green),
+                              onPressed: () async {
+                              final name = await _askFileName(context);
+                                if (name != null && name.isNotEmpty) {
+                                    await _saveToDevice(fileName: name);
+                              }
+                            },
+                ),
+
+
                                 const SizedBox(height: 8),
                                 ElevatedButton.icon(
                                   icon: const Icon(Icons.share),
